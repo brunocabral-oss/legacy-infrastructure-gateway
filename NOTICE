@@ -1,0 +1,39 @@
+Legacy Infrastructure Gateway (LIG)
+Copyright (c) 2026 Legacy Infrastructure Gateway Contributors
+
+This product includes software developed by open source projects:
+
+1. Netmiko
+   - License: MIT License
+   - Copyright (c) 2014 Kirk Byers
+   - Purpose: Multi-vendor network CLI connections over SSH
+
+2. NAPALM (Network Automation and Programmability Abstraction Layer with Multivendor support)
+   - License: Apache License 2.0
+   - Copyright (c) 2015-2026 NAPALM contributors
+   - Purpose: Uniform network device getters and operational state abstraction
+
+3. NTC Templates (Network to Code TextFSM Templates)
+   - License: Apache License 2.0
+   - Copyright (c) 2016-2026 Network to Code, LLC
+   - Purpose: CLI output parsing to structured data models
+
+4. FastAPI
+   - License: MIT License
+   - Copyright (c) 2018 Sebastián Ramírez
+   - Purpose: High-performance REST API framework
+
+5. Pydantic
+   - License: MIT License
+   - Copyright (c) 2017 Samuel Colvin and contributors
+   - Purpose: Data validation, settings management and semantic normalized models
+
+6. SQLAlchemy
+   - License: MIT License
+   - Copyright (c) 2005-2026 Michael Bayer and contributors
+   - Purpose: SQL toolkit and Object Relational Mapper for audit and inventory
+
+7. Prometheus Client
+   - License: Apache License 2.0
+   - Copyright (c) 2015-2026 The Prometheus Authors
+   - Purpose: Operational and performance metrics exposition

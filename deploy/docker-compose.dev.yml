@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lig-postgres-dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lig_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mock_db_password_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-lig_db}
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/api.Dockerfile
+    container_name: lig-api-dev
+    command: ["python", "-m", "uvicorn", "lig.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ../src:/app/src
+      - ../tests:/app/tests
+    ports:
+      - "8000:8000"
+    environment:
+      LIG_ENVIRONMENT: development
+      LIG_LOG_LEVEL: DEBUG
+      LIG_ENABLE_MOCK_DRIVER: "true"
+      DATABASE_URL: sqlite+aiosqlite:///./dev.sqlite3
