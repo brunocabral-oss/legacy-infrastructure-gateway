@@ -15,3 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Audit Service with immutable event logging and credential redaction.
 - REST API endpoints for device health, facts, interfaces, routes, ARP, MAC, neighbors, config, and diagnostics (ping/traceroute).
 - Dockerfile, Docker Compose specification and health check probes.
+- Phase 2: Asynchronous NetmikoTransport with thread workers (`asyncio.to_thread`) and safe credential provider.
+- Cisco IOS driver (`cisco_ios`) with NTC Templates parsers, commands, and contract tests.
+- Phase 3: Cisco IOS-XR driver (`cisco_iosxr`) supporting routing, ARP, LLDP, and explicit capability declarations.
+- Fortinet FortiOS driver (`fortios`) supporting system status, physical interfaces, routing table, and ARP.
+- Cross-vendor semantic contract verification suite guaranteeing identical Pydantic models across multivendor platforms.
