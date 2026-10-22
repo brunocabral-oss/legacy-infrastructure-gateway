@@ -52,6 +52,7 @@ class OpenSSHTransport(Transport):
             "-oHostKeyAlgorithms=+ssh-rsa",
             "-oPubkeyAcceptedKeyTypes=+ssh-rsa",
             "-oCiphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc,aes128-ctr,aes256-ctr",
+            "-oMACs=+hmac-sha1,hmac-md5,hmac-sha2-256",
             "-oStrictHostKeyChecking=no",
             "-oUserKnownHostsFile=/dev/null",
             "-oLogLevel=ERROR",
@@ -80,12 +81,27 @@ class OpenSSHTransport(Transport):
         try:
             proc = await asyncio.create_subprocess_exec(
                 *cmd_args,
+                stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
+            if proc.stdout is None or proc.stderr is None:
+                raise DeviceConnectionError(
+                    self.device.name, "Failed to capture subprocess streams"
+                )
+
+            # Concurrently read stdout and stderr while keeping stdin open to prevent
+            # OpenSSH 10+ from sending premature SSH2_MSG_CHANNEL_EOF to legacy devices
+            # (e.g. Cisco IOS-XR).
+            stdout_task = asyncio.create_task(proc.stdout.read())
+            stderr_task = asyncio.create_task(proc.stderr.read())
+
             stdout_bytes, stderr_bytes = await asyncio.wait_for(
-                proc.communicate(), timeout=self.timeout
+                asyncio.gather(stdout_task, stderr_task), timeout=self.timeout
             )
+            if proc.stdin and not proc.stdin.is_closing():
+                proc.stdin.close()
+            await proc.wait()
         except asyncio.TimeoutError as err:
             raise DeviceTimeoutError(self.device.name, self.timeout) from err
         except Exception as err:
@@ -94,6 +110,8 @@ class OpenSSHTransport(Transport):
         output = stdout_bytes.decode("utf-8", errors="replace")
         error_msg = stderr_bytes.decode("utf-8", errors="replace")
 
+        # Legacy devices like Cisco IOS-XR exit with status -1 (code 255) when closing the channel,
+        # but return complete valid command outputs. Treat as error only if output is empty.
         if proc.returncode != 0 and not output.strip():
             err_detail = f"SSH process exited with code {proc.returncode}: {error_msg.strip()}"
             raise DeviceConnectionError(self.device.name, err_detail)

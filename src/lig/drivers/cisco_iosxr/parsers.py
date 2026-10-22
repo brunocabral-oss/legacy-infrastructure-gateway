@@ -61,6 +61,58 @@ def parse_version_output(parsed_data: Any, fallback_hostname: str = "unknown") -
 def parse_interfaces_brief(parsed_data: Any) -> list[Interface]:
     """Transform show ipv4 interface brief into list of Interface."""
     interfaces: list[Interface] = []
+
+    if isinstance(parsed_data, str):
+        for line in parsed_data.splitlines():
+            line_str = line.strip()
+            if not line_str or line_str.startswith(
+                (
+                    "Thu ",
+                    "Wed ",
+                    "Tue ",
+                    "Mon ",
+                    "Sun ",
+                    "Sat ",
+                    "Fri ",
+                    "RP/",
+                    "Codes:",
+                    "Gateway",
+                    "Interface",
+                )
+            ):
+                continue
+            parts = line_str.split()
+            if len(parts) >= 4 and parts[0] not in {"Interface", "-----------------"}:
+                name = parts[0]
+                ip_str = parts[1]
+                admin_str = parts[2].lower()
+                oper_str = parts[3].lower()
+
+                admin_status = (
+                    InterfaceAdminStatus.DOWN
+                    if "down" in admin_str or "shutdown" in admin_str
+                    else InterfaceAdminStatus.UP
+                )
+                oper_status = (
+                    InterfaceOperStatus.UP if "up" in oper_str else InterfaceOperStatus.DOWN
+                )
+                ip_addresses: list[InterfaceIP] = []
+                if ip_str.lower() not in {"unassigned", "unset", "-"}:
+                    ip_addresses.append(
+                        InterfaceIP(address=ip_str, prefix_length=32, is_primary=True)
+                    )
+
+                interfaces.append(
+                    Interface(
+                        name=name,
+                        enabled=admin_status == InterfaceAdminStatus.UP,
+                        admin_status=admin_status,
+                        oper_status=oper_status,
+                        ip_addresses=ip_addresses,
+                    )
+                )
+        return interfaces
+
     if not isinstance(parsed_data, list):
         return interfaces
 
@@ -81,10 +133,10 @@ def parse_interfaces_brief(parsed_data: Any) -> list[Interface]:
         )
         oper_status = InterfaceOperStatus.UP if "up" in raw_oper else InterfaceOperStatus.DOWN
 
-        ip_addresses: list[InterfaceIP] = []
+        row_ips: list[InterfaceIP] = []
         ip = row.get("ip_address")
         if ip and ip.lower() not in {"unassigned", "unset"}:
-            ip_addresses.append(InterfaceIP(address=ip, prefix_length=32, is_primary=True))
+            row_ips.append(InterfaceIP(address=ip, prefix_length=32, is_primary=True))
 
         interfaces.append(
             Interface(
@@ -92,7 +144,7 @@ def parse_interfaces_brief(parsed_data: Any) -> list[Interface]:
                 enabled=admin_status == InterfaceAdminStatus.UP,
                 admin_status=admin_status,
                 oper_status=oper_status,
-                ip_addresses=ip_addresses,
+                ip_addresses=row_ips,
             )
         )
     return interfaces
@@ -101,6 +153,74 @@ def parse_interfaces_brief(parsed_data: Any) -> list[Interface]:
 def parse_routes_output(parsed_data: Any, query: RouteQuery) -> list[Route]:
     """Transform show route output into list of Route."""
     routes: list[Route] = []
+
+    if isinstance(parsed_data, str):
+        for line in parsed_data.splitlines():
+            line_str = line.strip()
+            if not line_str or line_str.startswith(
+                ("Codes:", "Gateway", "RP/", "Thu ", "Wed ", "Tue ", "Mon ", "Sun ", "Sat ", "Fri ")
+            ):
+                continue
+
+            parts = line_str.split()
+            if len(parts) >= 2:
+                prefix = None
+                prefix_idx = -1
+                for idx, p in enumerate(parts):
+                    if "/" in p and p.replace("/", "").replace(".", "").isdigit():
+                        prefix = p
+                        prefix_idx = idx
+                        break
+                if not prefix or prefix_idx < 1:
+                    continue
+
+                first_proto = parts[0]
+                protocol = XR_PROTOCOL_MAP.get(first_proto, RouteProtocol.OTHER)
+
+                distance = None
+                metric = None
+                next_hop = None
+                outgoing_if = None
+
+                bracket_match = re.search(r"\[(\d+)/(\d+)\]", line_str)
+                if bracket_match:
+                    distance = int(bracket_match.group(1))
+                    metric = int(bracket_match.group(2))
+
+                via_match = re.search(r"via\s+([\d.]+)", line_str)
+                if via_match:
+                    next_hop = via_match.group(1)
+
+                if "is directly connected" in line_str:
+                    c_parts = line_str.split(",")
+                    if len(c_parts) >= 2:
+                        outgoing_if = c_parts[-1].strip().split()[0]
+                elif next_hop:
+                    c_parts = line_str.split(",")
+                    if len(c_parts) >= 3:
+                        candidate_if = c_parts[-1].strip().split()[0]
+                        if not candidate_if.endswith("d") and not candidate_if.endswith("w"):
+                            outgoing_if = candidate_if
+
+                if query.destination and query.destination not in prefix:
+                    continue
+                if query.protocol and query.protocol != protocol:
+                    continue
+
+                routes.append(
+                    Route(
+                        prefix=prefix,
+                        protocol=protocol,
+                        next_hop=next_hop,
+                        outgoing_interface=outgoing_if,
+                        vrf=query.vrf or "default",
+                        distance=distance,
+                        metric=metric,
+                        active=True,
+                    )
+                )
+        return routes
+
     if not isinstance(parsed_data, list):
         return routes
 
@@ -153,16 +273,50 @@ def parse_routes_output(parsed_data: Any, query: RouteQuery) -> list[Route]:
 def parse_arp_output(parsed_data: Any) -> list[ArpEntry]:
     """Transform show arp output into list of ArpEntry."""
     entries: list[ArpEntry] = []
+
+    if isinstance(parsed_data, str):
+        for line in parsed_data.splitlines():
+            parts = line.split()
+            if len(parts) >= 6 and parts[0] != "Address" and "." in parts[0]:
+                ip = parts[0]
+                age_raw = parts[1]
+                mac = parts[2]
+                interface = parts[5]
+                age_seconds = None
+                if age_raw != "-":
+                    time_parts = age_raw.split(":")
+                    if len(time_parts) == 3:
+                        try:
+                            age_seconds = (
+                                int(time_parts[0]) * 3600
+                                + int(time_parts[1]) * 60
+                                + int(time_parts[2])
+                            )
+                        except ValueError:
+                            pass
+                    elif age_raw.isdigit():
+                        age_seconds = int(age_raw) * 60
+                entries.append(
+                    ArpEntry(
+                        ip_address=ip,
+                        mac_address=mac,
+                        interface=interface,
+                        age_seconds=age_seconds,
+                        entry_type="dynamic" if age_raw != "-" else "local",
+                    )
+                )
+        return entries
+
     if not isinstance(parsed_data, list):
         return entries
 
     for row in parsed_data:
         if not isinstance(row, dict):
             continue
-        ip = row.get("address") or row.get("ip_address")
-        mac = row.get("mac") or row.get("mac_address") or row.get("hardware_address")
-        interface = row.get("interface")
-        if not ip or not mac or not interface:
+        raw_ip = row.get("address") or row.get("ip_address")
+        raw_mac = row.get("mac") or row.get("mac_address") or row.get("hardware_address")
+        raw_interface = row.get("interface")
+        if not raw_ip or not raw_mac or not raw_interface:
             continue
 
         age_raw = str(row.get("age", "-"))
@@ -170,9 +324,9 @@ def parse_arp_output(parsed_data: Any) -> list[ArpEntry]:
 
         entries.append(
             ArpEntry(
-                ip_address=ip,
-                mac_address=mac,
-                interface=interface,
+                ip_address=str(raw_ip),
+                mac_address=str(raw_mac),
+                interface=str(raw_interface),
                 age_seconds=age_seconds,
                 entry_type="dynamic" if age_raw != "-" else "local",
             )

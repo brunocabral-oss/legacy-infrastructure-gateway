@@ -16,7 +16,7 @@ from lig.models.mac import MacEntry
 from lig.models.neighbor import Neighbor
 from lig.models.route import Route, RouteQuery
 from lig.transports.base import Transport
-from lig.transports.netmiko_transport import NetmikoTransport
+from lig.transports.openssh_transport import OpenSSHTransport
 
 
 class CiscoIOSXRDriver(InfrastructureDriver):
@@ -36,10 +36,9 @@ class CiscoIOSXRDriver(InfrastructureDriver):
             credential: DeviceCredential = self._cred_provider.get_credential(
                 device.credential_profile
             )
-            self._transport = NetmikoTransport(
+            self._transport = OpenSSHTransport(
                 device=device,
                 credential=credential,
-                device_type="cisco_xr",
             )
 
     def capabilities(self) -> CapabilityProfile:

@@ -42,11 +42,11 @@ class InMemoryInventory(InventoryProvider):
             ),
             Device(
                 name="ASR-LAB",
-                host="192.168.100.10",
+                host="192.168.200.145",
                 platform=DevicePlatform.CISCO_IOSXR,
                 transport=DeviceTransport.SSH,
                 port=22,
-                credential_profile="lab_reader",
+                credential_profile="asr_lab",
                 site="lab",
                 environment="lab",
                 enabled=True,
