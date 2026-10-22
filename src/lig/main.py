@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from lig.api.dependencies import get_driver_registry, get_inventory_provider
 from lig.api.errors import register_error_handlers
@@ -60,6 +61,12 @@ async def correlation_and_metrics_middleware(
     ).inc()
 
     return response
+
+
+@app.get("/", include_in_schema=False)
+async def root_redirect() -> RedirectResponse:
+    """Redirect root path to interactive Swagger documentation."""
+    return RedirectResponse(url="/docs")
 
 
 # Health and observability endpoints

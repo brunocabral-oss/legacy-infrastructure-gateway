@@ -59,7 +59,7 @@ def parse_interfaces(raw_output: Any) -> list[Interface]:
     # ==[ port1 ]
     #         name: port1   mode: static   ip: 192.168.1.1 255.255.255.0   status: up
     int_pattern = re.compile(
-        r"==\[\s*([^\s\]]+)\s*\][\s\S]*?(?=^==\[|\Z)",
+        r"^\s*==\[\s*([^\s\]]+)\s*\][\s\S]*?(?=^\s*==\[|\Z)",
         re.MULTILINE,
     )
 

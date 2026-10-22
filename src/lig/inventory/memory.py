@@ -62,6 +62,17 @@ class InMemoryInventory(InventoryProvider):
                 environment="lab",
                 enabled=True,
             ),
+            Device(
+                name="FW-LAB-60D",
+                host="5.8.88.31",
+                platform=DevicePlatform.FORTIOS,
+                transport=DeviceTransport.SSH,
+                port=22,
+                credential_profile="fortigate_lab",
+                site="lab",
+                environment="lab",
+                enabled=True,
+            ),
         ]
         for dev in default_devices:
             self._devices[dev.name] = dev

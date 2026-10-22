@@ -16,7 +16,7 @@ from lig.models.mac import MacEntry
 from lig.models.neighbor import Neighbor
 from lig.models.route import Route, RouteQuery
 from lig.transports.base import Transport
-from lig.transports.netmiko_transport import NetmikoTransport
+from lig.transports.openssh_transport import OpenSSHTransport
 
 
 class FortiOSDriver(InfrastructureDriver):
@@ -36,10 +36,9 @@ class FortiOSDriver(InfrastructureDriver):
             credential: DeviceCredential = self._cred_provider.get_credential(
                 device.credential_profile
             )
-            self._transport = NetmikoTransport(
+            self._transport = OpenSSHTransport(
                 device=device,
                 credential=credential,
-                device_type="fortinet",
             )
 
     def capabilities(self) -> CapabilityProfile:
@@ -87,19 +86,46 @@ class FortiOSDriver(InfrastructureDriver):
         return parsers.parse_system_status(output, fallback_hostname=self.device.name)
 
     async def get_interfaces(self) -> list[Interface]:
-        output: Any = await self._transport.send_command(
+        cmd = "config global\nget system interface physical\nend"
+        try:
+            output: Any = await self._transport.send_command(cmd, use_textfsm=False)
+            results = parsers.parse_interfaces(output)
+            if results:
+                return results
+        except Exception:
+            pass
+        fallback_out: Any = await self._transport.send_command(
             commands.GET_SYSTEM_INTERFACE, use_textfsm=False
         )
-        return parsers.parse_interfaces(output)
+        return parsers.parse_interfaces(fallback_out)
 
     async def get_routes(self, query: RouteQuery) -> list[Route]:
-        cmd = commands.format_route_command(destination=query.destination, vrf=query.vrf)
-        output: Any = await self._transport.send_command(cmd, use_textfsm=True)
+        vdom = query.vrf or "CAS"
+        cmd = f"config vdom\nedit {vdom}\nget router info routing-table all\nend"
+        try:
+            output: Any = await self._transport.send_command(cmd, use_textfsm=False)
+            results = parsers.parse_routing_table(output, query=query)
+            if results:
+                return results
+        except Exception:
+            pass
+        std_cmd = commands.format_route_command(destination=query.destination, vrf=query.vrf)
+        output = await self._transport.send_command(std_cmd, use_textfsm=True)
         return parsers.parse_routing_table(output, query=query)
 
     async def get_arp_table(self) -> list[ArpEntry]:
-        output: Any = await self._transport.send_command(commands.GET_SYSTEM_ARP, use_textfsm=True)
-        return parsers.parse_arp_table(output)
+        cmd = "config vdom\nedit CAS\nget system arp\nend"
+        try:
+            output: Any = await self._transport.send_command(cmd, use_textfsm=False)
+            results = parsers.parse_arp_table(output)
+            if results:
+                return results
+        except Exception:
+            pass
+        fallback_arp: Any = await self._transport.send_command(
+            commands.GET_SYSTEM_ARP, use_textfsm=True
+        )
+        return parsers.parse_arp_table(fallback_arp)
 
     async def get_mac_table(self) -> list[MacEntry]:
         return []

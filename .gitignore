@@ -43,8 +43,8 @@ venv.bak/
 *.id_rsa
 *.id_ed25519
 *.crt
-credentials.yaml
-!credentials.example.yaml
+*credentials.yaml
+!*credentials.example.yaml
 
 # IDE & editors
 .idea/
