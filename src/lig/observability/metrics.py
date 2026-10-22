@@ -21,6 +21,18 @@ AUDIT_EVENTS = Counter(
     ["operation", "decision", "result"],
 )
 
+AUTH_FAILURES = Counter(
+    "lig_auth_failures_total",
+    "Total authentication failures",
+    ["source_ip"],
+)
+
+RATE_LIMIT_EXCEEDED = Counter(
+    "lig_rate_limit_exceeded_total",
+    "Total rate limit exceeded events",
+    ["source_ip"],
+)
+
 
 def get_metrics_payload() -> tuple[bytes, str]:
     """Generate Prometheus scrape payload."""

@@ -14,6 +14,7 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://testserver",
+        headers={"X-API-Key": "lig_reader_dev_token"},
     ) as ac:
         yield ac
 
