@@ -102,6 +102,14 @@ pytest -v
 
 ---
 
+## 🏛️ MVP Scope & Intentional Trade-offs
+
+- **In-Memory Inventory & Static Tokens**: `InMemoryInventory` and static API bearer tokens are intentional MVP defaults designed for rapid local bring-up and testing, with PostgreSQL/Vault/OIDC defined as production extension points.
+- **Strict Read-Only & AI-Optional Architecture**: Enforces strict Read-Only operations (ADR 0003) to eliminate accidental mutations, paired with an AI-optional MCP adapter architecture (ADR 0002) where LLMs act strictly as upstream consumers without direct device access.
+- **Offline Demonstration**: See [`examples/demo_multivendor.py`](examples/demo_multivendor.py) for a fully functional offline demonstration script exercising normalized multi-vendor operations.
+
+---
+
 ## 📄 License
 This project is licensed under the [MIT License](LICENSE).
 Third-party notices and licenses are cataloged in [NOTICE](NOTICE).

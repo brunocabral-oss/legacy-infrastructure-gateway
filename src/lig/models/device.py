@@ -12,6 +12,7 @@ class DevicePlatform(str, Enum):
     CISCO_IOSXR = "cisco_iosxr"
     FORTIOS = "fortios"
     GENERIC_SSH = "generic_ssh"
+    LINUX_HOST = "linux_host"
     MOCK = "mock"
 
 

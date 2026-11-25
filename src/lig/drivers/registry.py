@@ -7,6 +7,7 @@ from lig.drivers.base import InfrastructureDriver
 from lig.drivers.cisco_ios.driver import CiscoIOSDriver
 from lig.drivers.cisco_iosxr.driver import CiscoIOSXRDriver
 from lig.drivers.fortios.driver import FortiOSDriver
+from lig.drivers.linux_host.driver import LinuxHostDriver
 from lig.drivers.mock.driver import MockDriver
 from lig.models.device import Device, DevicePlatform
 
@@ -21,6 +22,7 @@ class DriverRegistry:
         self.register(DevicePlatform.CISCO_IOS.value, CiscoIOSDriver)
         self.register(DevicePlatform.CISCO_IOSXR.value, CiscoIOSXRDriver)
         self.register(DevicePlatform.FORTIOS.value, FortiOSDriver)
+        self.register(DevicePlatform.LINUX_HOST.value, LinuxHostDriver)
 
     def register(self, platform: str, driver_cls: Type[InfrastructureDriver]) -> None:
         """Register a driver class for a specific platform string."""
