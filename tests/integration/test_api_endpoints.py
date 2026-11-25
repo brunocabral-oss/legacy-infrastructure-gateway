@@ -87,8 +87,8 @@ async def test_get_device_routes_with_filter(client: AsyncClient) -> None:
     routes = body["data"]
     assert len(routes) == 1
     assert routes[0]["vrf"] == "lab"
-    assert routes[0]["prefix"] == "192.168.199.48/32"
-    assert routes[0]["next_hop"] == "192.168.200.140"
+    assert routes[0]["prefix"] == "192.0.2.48/32"
+    assert routes[0]["next_hop"] == "198.51.100.140"
 
 
 @pytest.mark.asyncio

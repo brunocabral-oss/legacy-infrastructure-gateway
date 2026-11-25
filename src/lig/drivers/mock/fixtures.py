@@ -10,7 +10,7 @@ from lig.models.route import Route, RouteProtocol
 
 MOCK_FACTS = DeviceFacts(
     hostname="VDORTD-A",
-    fqdn="vdortd-a.lab.local",
+    fqdn="core-rtr-01.example.net",
     vendor="Cisco",
     model="Cisco ASR 1001-X",
     os_version="16.09.05",
@@ -29,7 +29,7 @@ MOCK_INTERFACES = [
         mac_address="00:50:56:88:aa:01",
         mtu=1500,
         speed_mbps=1000,
-        ip_addresses=[InterfaceIP(address="192.168.199.45", prefix_length=24, is_primary=True)],
+        ip_addresses=[InterfaceIP(address="192.0.2.45", prefix_length=24, is_primary=True)],
     ),
     Interface(
         name="GigabitEthernet0/0/1",
@@ -46,9 +46,9 @@ MOCK_INTERFACES = [
 
 MOCK_ROUTES = [
     Route(
-        prefix="192.168.199.48/32",
+        prefix="192.0.2.48/32",
         protocol=RouteProtocol.STATIC,
-        next_hop="192.168.200.140",
+        next_hop="198.51.100.140",
         outgoing_interface="GigabitEthernet0/0/0",
         vrf="lab",
         distance=10,
@@ -59,7 +59,7 @@ MOCK_ROUTES = [
     Route(
         prefix="10.0.0.0/8",
         protocol=RouteProtocol.OSPF,
-        next_hop="192.168.199.1",
+        next_hop="192.0.2.1",
         outgoing_interface="GigabitEthernet0/0/0",
         vrf="default",
         distance=110,
@@ -70,7 +70,7 @@ MOCK_ROUTES = [
     Route(
         prefix="0.0.0.0/0",
         protocol=RouteProtocol.STATIC,
-        next_hop="192.168.199.254",
+        next_hop="192.0.2.254",
         outgoing_interface="GigabitEthernet0/0/0",
         vrf="default",
         distance=1,
@@ -82,14 +82,14 @@ MOCK_ROUTES = [
 
 MOCK_ARP_TABLE = [
     ArpEntry(
-        ip_address="192.168.199.48",
+        ip_address="192.0.2.48",
         mac_address="00:50:56:88:bb:02",
         interface="GigabitEthernet0/0/0",
         age_seconds=120,
         entry_type="dynamic",
     ),
     ArpEntry(
-        ip_address="192.168.199.254",
+        ip_address="192.0.2.254",
         mac_address="00:50:56:88:cc:fe",
         interface="GigabitEthernet0/0/0",
         age_seconds=45,
@@ -128,15 +128,15 @@ ip routing
 !
 interface GigabitEthernet0/0/0
  description Uplink to Core-1
- ip address 192.168.199.45 255.255.255.0
+ ip address 192.0.2.45 255.255.255.0
 !
-ip route 192.168.199.48 255.255.255.255 192.168.200.140
+ip route 192.0.2.48 255.255.255.255 198.51.100.140
 !
 end
 """
 
 MOCK_PING_RESULT = PingResult(
-    destination="192.168.199.48",
+    destination="192.0.2.48",
     packets_transmitted=5,
     packets_received=5,
     packet_loss_percentage=0.0,
@@ -146,16 +146,16 @@ MOCK_PING_RESULT = PingResult(
 )
 
 MOCK_TRACEROUTE_RESULT = TracerouteResult(
-    destination="192.168.199.48",
+    destination="192.0.2.48",
     hops=[
         TracerouteHop(
-            hop_number=1, ip_address="192.168.199.254", hostname="gw-core.lab.local", rtt_ms=0.8
+            hop_number=1, ip_address="192.0.2.254", hostname="gw-core.example.net", rtt_ms=0.8
         ),
         TracerouteHop(
-            hop_number=2, ip_address="192.168.200.140", hostname="rtr-edge.lab.local", rtt_ms=1.4
+            hop_number=2, ip_address="198.51.100.140", hostname="rtr-edge.example.net", rtt_ms=1.4
         ),
         TracerouteHop(
-            hop_number=3, ip_address="192.168.199.48", hostname="target.lab.local", rtt_ms=1.9
+            hop_number=3, ip_address="192.0.2.48", hostname="target.example.net", rtt_ms=1.9
         ),
     ],
 )

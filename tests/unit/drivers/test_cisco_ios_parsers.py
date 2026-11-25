@@ -40,7 +40,7 @@ def test_parse_ip_interface_brief() -> None:
     data = [
         {
             "interface": "GigabitEthernet0/0/0",
-            "ip_address": "192.168.199.45",
+            "ip_address": "192.0.2.45",
             "status": "up",
             "proto": "up",
         },
@@ -59,7 +59,7 @@ def test_parse_ip_interface_brief() -> None:
     assert int0.admin_status == InterfaceAdminStatus.UP
     assert int0.oper_status == InterfaceOperStatus.UP
     assert len(int0.ip_addresses) == 1
-    assert int0.ip_addresses[0].address == "192.168.199.45"
+    assert int0.ip_addresses[0].address == "192.0.2.45"
 
     int1 = interfaces[1]
     assert int1.name == "GigabitEthernet0/0/1"
@@ -137,7 +137,7 @@ def test_parse_arp_output() -> None:
 def test_parse_cdp_neighbors_output() -> None:
     data = [
         {
-            "neighbor_name": "SW-ACCESS-01.lab.local",
+            "neighbor_name": "SW-ACCESS-01.example.net",
             "mgmt_address": "192.168.1.2",
             "platform": "cisco WS-C2960-24TT-L",
             "neighbor_interface": "FastEthernet0/24",
@@ -147,7 +147,7 @@ def test_parse_cdp_neighbors_output() -> None:
     neighbors = parsers.parse_cdp_neighbors_output(data)
     assert len(neighbors) == 1
     n = neighbors[0]
-    assert n.remote_hostname == "SW-ACCESS-01.lab.local"
+    assert n.remote_hostname == "SW-ACCESS-01.example.net"
     assert n.local_interface == "GigabitEthernet0/1"
     assert n.remote_port == "FastEthernet0/24"
     assert n.protocol == NeighborProtocol.CDP
